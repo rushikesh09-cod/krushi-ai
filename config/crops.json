@@ -1,0 +1,24 @@
+{
+  "crops": [
+    {
+      "canonical_name": "Onion",
+      "variants": ["onion", "onions"]
+    },
+    {
+      "canonical_name": "Tomato",
+      "variants": ["tomato", "tomatoes"]
+    },
+    {
+      "canonical_name": "Potato",
+      "variants": ["potato", "potatoes"]
+    },
+    {
+      "canonical_name": "Wheat",
+      "variants": ["wheat"]
+    },
+    {
+      "canonical_name": "Soybean",
+      "variants": ["soybean", "soyabean", "soya bean"]
+    }
+  ]
+}

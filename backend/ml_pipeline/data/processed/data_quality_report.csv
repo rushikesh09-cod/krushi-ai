@@ -1,0 +1,20 @@
+Crop,Market,Record_Count,Overall_Score,Is_Eligible,Record_Count_Score,Freshness_Score,Missing_Date_Score,Missing_Value_Score,Continuity_Score,Outlier_Score,Coverage_Score,Latest_Date,Date_Range_Days,Missing_Date_Pct,Missing_Value_Pct,Outlier_Pct,Reasons_If_Ineligible,Warnings
+Onion,Kolhapur,217,99.8,True,100.0,100.0,98.6,100.0,100.0,100.0,100.0,2026-07-11,219,1.36,0.0,0.0,,
+Onion,Nashik,216,99.7,True,100.0,100.0,98.2,100.0,100.0,100.0,100.0,2026-07-11,219,1.82,0.0,0.0,,
+Onion,Pune,217,99.7,True,100.0,100.0,98.2,100.0,100.0,100.0,100.0,2026-07-11,219,1.82,0.0,0.0,,
+Onion,Sangli,217,99.8,True,100.0,100.0,98.6,100.0,100.0,100.0,100.0,2026-07-11,219,1.36,0.0,0.0,,
+Onion,Satara,212,99.5,True,100.0,100.0,96.4,100.0,100.0,100.0,100.0,2026-07-11,219,3.64,0.0,0.0,,
+Potato,Nashik,147,94.6,True,81.7,100.0,98.0,100.0,100.0,100.0,82.8,2026-07-11,149,2.0,0.0,0.0,,
+Potato,Pune,148,94.8,True,82.2,100.0,98.7,100.0,100.0,100.0,82.8,2026-07-11,149,1.33,0.0,0.0,,
+Potato,Satara,147,94.6,True,81.7,100.0,98.0,100.0,100.0,100.0,82.8,2026-07-11,149,2.0,0.0,0.0,,
+Soybean,Kolhapur,156,96.1,True,86.7,100.0,97.5,100.0,100.0,100.0,88.3,2026-07-11,159,2.5,0.0,0.0,,
+Soybean,Sangli,12,73.3,False,6.7,100.0,100.0,100.0,100.0,100.0,6.1,2026-07-03,11,0.0,0.0,0.0,Only 12 records (minimum floor is 30),
+Soybean,Satara,158,93.7,True,87.8,100.0,98.8,100.0,100.0,81.0,88.3,2026-07-11,159,1.25,0.0,3.16,,
+Tomato,Kolhapur,197,99.8,True,100.0,100.0,98.5,100.0,100.0,100.0,100.0,2026-07-11,199,1.5,0.0,0.0,,
+Tomato,Nashik,194,97.8,True,100.0,100.0,97.0,100.0,100.0,87.6,100.0,2026-07-11,199,3.0,0.0,2.06,,
+Tomato,Pune,194,98.6,True,100.0,100.0,96.5,100.0,93.8,100.0,100.0,2026-07-11,199,3.5,0.0,0.0,,
+Tomato,Sangli,194,99.6,True,100.0,100.0,97.0,100.0,100.0,100.0,100.0,2026-07-11,199,3.0,0.0,0.0,,
+Tomato,Satara,196,99.7,True,100.0,100.0,98.0,100.0,100.0,100.0,100.0,2026-07-11,199,2.0,0.0,0.0,,
+Wheat,Kolhapur,115,75.1,True,63.9,0.0,95.8,100.0,100.0,100.0,66.1,2025-10-04,119,4.17,0.0,0.0,,Data is fairly stale - forecast confidence should be reduced accordingly
+Wheat,Pune,118,63.4,True,65.6,0.0,98.3,100.0,100.0,13.6,66.1,2025-10-04,119,1.67,0.0,14.41,,Data is fairly stale - forecast confidence should be reduced accordingly
+Wheat,Satara,117,75.5,True,65.0,0.0,97.5,100.0,100.0,100.0,66.1,2025-10-04,119,2.5,0.0,0.0,,Data is fairly stale - forecast confidence should be reduced accordingly

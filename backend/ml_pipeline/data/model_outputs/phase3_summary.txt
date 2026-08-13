@@ -1,0 +1,34 @@
+KrushiMitra AI - Phase 3 Advanced Model Summary
+*** RESULTS ARE FROM SYNTHETIC / SAMPLE DEVELOPMENT DATA - NOT REAL-WORLD ACCURACY ***
+Generated: 2026-07-21 05:13:47.842163
+
+Total (Crop, Market) pairs in Phase 1 report: 19
+Pairs modeled in Phase 3: 18
+Pairs skipped: 1
+
+Selection rule: MAE primary, RMSE tie-breaker, minimum 2.0% MAE improvement over naive baseline required before a complex model replaces it.
+
+Selected model scope breakdown:
+  naive: 15 pair(s)
+  combined: 2 pair(s)
+  crop_specific: 1 pair(s)
+
+Per-pair selection:
+  Onion @ Kolhapur: Naive_Previous_Price (MAE=20.049, improvement over naive=0.0%)
+  Onion @ Nashik: Naive_Previous_Price (MAE=18.975, improvement over naive=0.0%)
+  Onion @ Pune: Naive_Previous_Price (MAE=19.39, improvement over naive=0.0%)
+  Onion @ Sangli: Naive_Previous_Price (MAE=19.146, improvement over naive=0.0%)
+  Onion @ Satara: Naive_Previous_Price (MAE=16.6, improvement over naive=0.0%)
+  Potato @ Nashik: Naive_Previous_Price (MAE=19.926, improvement over naive=0.0%)
+  Potato @ Pune: Naive_Previous_Price (MAE=18.63, improvement over naive=0.0%)
+  Potato @ Satara: Naive_Previous_Price (MAE=22.741, improvement over naive=0.0%)
+  Soybean @ Kolhapur: Naive_Previous_Price (MAE=57.107, improvement over naive=0.0%)
+  Soybean @ Satara: Random_Forest_Crop_Specific (MAE=59.38, improvement over naive=9.18%)
+  Tomato @ Kolhapur: Naive_Previous_Price (MAE=67.297, improvement over naive=0.0%)
+  Tomato @ Nashik: Naive_Previous_Price (MAE=73.944, improvement over naive=0.0%)
+  Tomato @ Pune: Naive_Previous_Price (MAE=67.722, improvement over naive=0.0%)
+  Tomato @ Sangli: Naive_Previous_Price (MAE=84.472, improvement over naive=0.0%)
+  Tomato @ Satara: Random_Forest_Combined (MAE=77.418, improvement over naive=4.19%)
+  Wheat @ Kolhapur: Naive_Previous_Price (MAE=15.95, improvement over naive=0.0%)
+  Wheat @ Pune: Naive_Previous_Price (MAE=18.667, improvement over naive=0.0%)
+  Wheat @ Satara: Random_Forest_Combined (MAE=12.773, improvement over naive=4.88%)

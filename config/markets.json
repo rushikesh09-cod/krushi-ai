@@ -1,0 +1,9 @@
+{
+  "markets": [
+    { "canonical_name": "Sangli", "variants": ["sangli", "sangli(apmc)"] },
+    { "canonical_name": "Kolhapur", "variants": ["kolhapur"] },
+    { "canonical_name": "Satara", "variants": ["satara"] },
+    { "canonical_name": "Pune", "variants": ["pune", "poona"] },
+    { "canonical_name": "Nashik", "variants": ["nashik", "nasik"] }
+  ]
+}

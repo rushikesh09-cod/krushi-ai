@@ -1,0 +1,17 @@
+# Phase 1 requirements
+pandas==2.2.2
+numpy==1.26.4
+
+# Phase 2 requirements (feature engineering + baseline models)
+scikit-learn==1.5.0
+
+# Phase 3 requirements (advanced models + model registry)
+xgboost==2.0.3
+joblib==1.4.2
+
+# Phase 4 requirements (FastAPI backend)
+fastapi==0.111.0
+uvicorn==0.30.1
+pydantic==2.7.4
+httpx==0.27.0
+pytest==8.2.2

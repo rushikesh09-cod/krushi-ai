@@ -1,0 +1,15 @@
+KrushiMitra AI - Phase 2 Baseline Model Summary
+Generated: 2026-07-12 14:39:57.836058
+
+Total (Crop, Market) pairs in Phase 1 quality report: 19
+Pairs successfully modeled:                           18
+Pairs skipped:                                         1
+
+Skipped pairs and reasons:
+  Soybean @ Sangli: Only 12 records (minimum floor is 30)
+
+Average metrics per model (across all modeled pairs):
+  Linear_Regression: MAE=54.111, RMSE=65.673, MAPE=4.204%
+  Moving_Average_3Day: MAE=47.106, RMSE=58.643, MAPE=3.332%
+  Moving_Average_7Day: MAE=64.023, RMSE=78.906, MAPE=4.499%
+  Naive_Previous_Price: MAE=38.902, RMSE=47.673, MAPE=2.767%

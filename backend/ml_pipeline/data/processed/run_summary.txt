@@ -1,0 +1,22 @@
+KrushiMitra AI - Phase 1 Pipeline Run Summary
+Generated: 2026-07-12 13:59:48.837427
+
+Input row count (combined raw files):     3325
+Unsupported-crop row count (set aside):    40
+Rows after hard validation (valid):        3207
+Rejected row count (hard validation fail): 78
+Duplicate row count (removed):              35
+Outlier row count (flagged, kept):          26
+Final cleaned row count:                    3172
+
+(Crop, Market) pairs assessed: 19
+  Eligible for forecasting:     18
+  NOT eligible:                 1
+
+Output files:
+  Cleaned dataset:      /home/claude/krushimitra-ai/backend/ml_pipeline/data/processed/cleaned_multicrop_prices.csv
+  Quality report (CSV): /home/claude/krushimitra-ai/backend/ml_pipeline/data/processed/data_quality_report.csv
+  Quality summary:      /home/claude/krushimitra-ai/backend/ml_pipeline/data/processed/data_quality_summary.txt
+  Rejected records:     /home/claude/krushimitra-ai/backend/ml_pipeline/data/rejected/rejected_records.csv
+  Unsupported crops:    /home/claude/krushimitra-ai/backend/ml_pipeline/data/rejected/unsupported_crops.csv
+  Duplicate records:    /home/claude/krushimitra-ai/backend/ml_pipeline/data/rejected/duplicate_records.csv

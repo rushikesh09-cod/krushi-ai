@@ -1,0 +1,25 @@
+Data Quality Summary - generated 2026-07-12 13:59:48.825873
+Total (Crop, Market) pairs assessed: 19
+Eligible for forecasting: 18
+NOT eligible (insufficient/poor data): 1
+
+Per-pair detail:
+  [ELIGIBLE] Onion @ Kolhapur: score=99.8, records=217
+  [ELIGIBLE] Onion @ Nashik: score=99.7, records=216
+  [ELIGIBLE] Onion @ Pune: score=99.7, records=217
+  [ELIGIBLE] Onion @ Sangli: score=99.8, records=217
+  [ELIGIBLE] Onion @ Satara: score=99.5, records=212
+  [ELIGIBLE] Potato @ Nashik: score=94.6, records=147
+  [ELIGIBLE] Potato @ Pune: score=94.8, records=148
+  [ELIGIBLE] Potato @ Satara: score=94.6, records=147
+  [ELIGIBLE] Soybean @ Kolhapur: score=96.1, records=156
+  [NOT ELIGIBLE] Soybean @ Sangli: score=73.3, records=12 -- Only 12 records (minimum floor is 30)
+  [ELIGIBLE] Soybean @ Satara: score=93.7, records=158
+  [ELIGIBLE] Tomato @ Kolhapur: score=99.8, records=197
+  [ELIGIBLE] Tomato @ Nashik: score=97.8, records=194
+  [ELIGIBLE] Tomato @ Pune: score=98.6, records=194
+  [ELIGIBLE] Tomato @ Sangli: score=99.6, records=194
+  [ELIGIBLE] Tomato @ Satara: score=99.7, records=196
+  [ELIGIBLE] Wheat @ Kolhapur: score=75.1, records=115 | Warnings: Data is fairly stale - forecast confidence should be reduced accordingly
+  [ELIGIBLE] Wheat @ Pune: score=63.4, records=118 | Warnings: Data is fairly stale - forecast confidence should be reduced accordingly
+  [ELIGIBLE] Wheat @ Satara: score=75.5, records=117 | Warnings: Data is fairly stale - forecast confidence should be reduced accordingly
