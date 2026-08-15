@@ -30,3 +30,14 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+# ML models
+*.joblib
+*.pkl
+
+# Generated ML data
+backend/ml_pipeline/data/features/
+backend/ml_pipeline/data/model_outputs/
+backend/ml_pipeline/data/processed/
+
+# Keep raw sample data if you want it in GitHub
+# backend/ml_pipeline/data/raw/
