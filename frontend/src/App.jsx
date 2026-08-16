@@ -8,23 +8,54 @@ import {
   CalendarDays,
   Brain,
   Activity,
+  BarChart3,
+  Trophy,
+  Globe,
 } from "lucide-react";
 
 import {
   ResponsiveContainer,
-  LineChart,
-  Line,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
 } from "recharts";
 
+import logo from "./assets/krushimitra-logo.png";
+import translations from "./translations";
+
 import "./App.css";
 
 const API_URL = "http://127.0.0.1:8000";
 
 function App() {
+  // =====================================================
+  // LANGUAGE
+  // =====================================================
+
+  const [language, setLanguage] = useState(() => {
+    return (
+      localStorage.getItem("krushimitra_language") ||
+      "en"
+    );
+  });
+
+  const t = translations[language];
+
+  useEffect(() => {
+    localStorage.setItem(
+      "krushimitra_language",
+      language
+    );
+  }, [language]);
+
+
+  // =====================================================
+  // DATA
+  // =====================================================
+
   const [models, setModels] = useState([]);
   const [crops, setCrops] = useState([]);
   const [markets, setMarkets] = useState([]);
@@ -33,19 +64,50 @@ function App() {
   const [crop, setCrop] = useState("");
   const [market, setMarket] = useState("");
   const [variety, setVariety] = useState("");
-
-  const [forecastDate, setForecastDate] = useState("2026-08-22");
+  const [forecastDate, setForecastDate] = useState("");
 
   const [prediction, setPrediction] = useState(null);
 
   const [loading, setLoading] = useState(false);
-  const [loadingMarketPrice, setLoadingMarketPrice] = useState(false);
-
   const [error, setError] = useState("");
 
-  // --------------------------------------------------
-  // Load backend reference data
-  // --------------------------------------------------
+  const [predictionHistory, setPredictionHistory] =
+    useState(() => {
+      try {
+        const saved = localStorage.getItem(
+          "krushimitra_prediction_history"
+        );
+
+        return saved
+          ? JSON.parse(saved)
+          : [];
+      } catch {
+        return [];
+      }
+    });
+
+
+  // =====================================================
+  // CROP DISPLAY NAME
+  //
+  // IMPORTANT:
+  // `crop` remains the original English backend value.
+  // Only the displayed text is translated.
+  // =====================================================
+
+  function getCropDisplayName(cropName) {
+    if (!cropName) return "";
+
+    return (
+      t.cropNames?.[cropName] ||
+      cropName
+    );
+  }
+
+
+  // =====================================================
+  // LOAD BACKEND DATA
+  // =====================================================
 
   useEffect(() => {
     async function loadData() {
@@ -56,7 +118,7 @@ function App() {
           cropResponse,
           marketResponse,
           modelResponse,
-          marketPriceResponse,
+          priceResponse,
         ] = await Promise.all([
           axios.get(`${API_URL}/crops`),
           axios.get(`${API_URL}/markets`),
@@ -64,35 +126,40 @@ function App() {
           axios.get(`${API_URL}/market-prices`),
         ]);
 
-        const cropList = cropResponse.data.crops || [];
-        const marketList = marketResponse.data.markets || [];
-        const modelList = modelResponse.data.models || [];
-        const priceList = marketPriceResponse.data.prices || [];
+        const cropList =
+          cropResponse.data.crops || [];
+
+        const marketList =
+          marketResponse.data.markets || [];
+
+        const modelList =
+          modelResponse.data.models || [];
+
+        const priceList =
+          priceResponse.data.prices || [];
 
         setCrops(cropList);
         setMarkets(marketList);
         setModels(modelList);
         setMarketPrices(priceList);
 
-        // Select first valid crop
         if (cropList.length > 0) {
           setCrop(cropList[0]);
         }
       } catch (err) {
-        console.error("Backend connection error:", err);
+        console.error(err);
 
-        setError(
-          "Unable to connect to the KrushiMitra AI backend. Make sure FastAPI is running on port 8000."
-        );
+        setError(t.backendError);
       }
     }
 
     loadData();
   }, []);
 
-  // --------------------------------------------------
-  // Find valid markets for selected crop
-  // --------------------------------------------------
+
+  // =====================================================
+  // VALID MARKETS
+  // =====================================================
 
   const validMarkets = useMemo(() => {
     if (!crop) return [];
@@ -101,21 +168,18 @@ function App() {
       ...new Set(
         models
           .filter(
-            (model) =>
-              String(model.crop).toLowerCase() ===
+            (item) =>
+              String(item.crop).toLowerCase() ===
               String(crop).toLowerCase()
           )
-          .map((model) => model.market)
+          .map((item) => item.market)
       ),
     ];
   }, [models, crop]);
 
-  // --------------------------------------------------
-  // Automatically select first valid market
-  // --------------------------------------------------
 
   useEffect(() => {
-    if (validMarkets.length === 0) {
+    if (!validMarkets.length) {
       setMarket("");
       return;
     }
@@ -125,9 +189,10 @@ function App() {
     }
   }, [validMarkets, market]);
 
-  // --------------------------------------------------
-  // Find valid variety for crop + market
-  // --------------------------------------------------
+
+  // =====================================================
+  // VALID VARIETIES
+  // =====================================================
 
   const validVarieties = useMemo(() => {
     if (!crop || !market) return [];
@@ -136,23 +201,22 @@ function App() {
       ...new Set(
         models
           .filter(
-            (model) =>
-              String(model.crop).toLowerCase() ===
+            (item) =>
+              String(item.crop).toLowerCase() ===
                 String(crop).toLowerCase() &&
-              String(model.market).toLowerCase() ===
+              String(item.market).toLowerCase() ===
                 String(market).toLowerCase()
           )
-          .map((model) => model.variety_used)
+          .map(
+            (item) => item.variety_used
+          )
       ),
     ];
   }, [models, crop, market]);
 
-  // --------------------------------------------------
-  // Automatically select valid variety
-  // --------------------------------------------------
 
   useEffect(() => {
-    if (validVarieties.length === 0) {
+    if (!validVarieties.length) {
       setVariety("");
       return;
     }
@@ -162,53 +226,150 @@ function App() {
     }
   }, [validVarieties, variety]);
 
-  // --------------------------------------------------
-  // Find latest available market price
-  // --------------------------------------------------
+
+  // =====================================================
+  // LATEST MARKET PRICE
+  // =====================================================
 
   const latestMarketPrice = useMemo(() => {
-    if (!crop || !market || !variety || marketPrices.length === 0) {
+    if (!crop || !market || !variety) {
       return null;
     }
 
-    const matchingPrices = marketPrices.filter((item) => {
-      const cropMatch =
-        String(item.crop).toLowerCase() === String(crop).toLowerCase();
+    const today = new Date();
 
-      const marketMatch =
-        String(item.market).toLowerCase() ===
-        String(market).toLowerCase();
+    const matching = marketPrices.filter(
+      (item) => {
+        const itemDate = new Date(
+          item.arrival_date
+        );
 
-      const varietyMatch =
-        String(item.variety).toLowerCase() ===
-        String(variety).toLowerCase();
+        return (
+          String(item.crop).toLowerCase() ===
+            String(crop).toLowerCase() &&
+          String(item.market).toLowerCase() ===
+            String(market).toLowerCase() &&
+          String(item.variety).toLowerCase() ===
+            String(variety).toLowerCase() &&
+          !Number.isNaN(
+            itemDate.getTime()
+          ) &&
+          itemDate <= today
+        );
+      }
+    );
 
-      return cropMatch && marketMatch && varietyMatch;
-    });
-
-    if (matchingPrices.length === 0) {
+    if (!matching.length) {
       return null;
     }
 
-    // Sort by arrival date and take the newest record
-    const sortedPrices = [...matchingPrices].sort(
+    return [...matching].sort(
       (a, b) =>
         new Date(b.arrival_date) -
         new Date(a.arrival_date)
-    );
+    )[0];
+  }, [
+    marketPrices,
+    crop,
+    market,
+    variety,
+  ]);
 
-    return sortedPrices[0];
-  }, [marketPrices, crop, market, variety]);
 
-  // --------------------------------------------------
-  // Prediction
-  // --------------------------------------------------
+  // =====================================================
+  // MARKET COMPARISON
+  // =====================================================
+
+  const marketComparison = useMemo(() => {
+    if (!crop) return [];
+
+    const today = new Date();
+
+    const cropPrices =
+      marketPrices.filter((item) => {
+        const itemDate = new Date(
+          item.arrival_date
+        );
+
+        return (
+          String(item.crop).toLowerCase() ===
+            String(crop).toLowerCase() &&
+          !Number.isNaN(
+            itemDate.getTime()
+          ) &&
+          itemDate <= today
+        );
+      });
+
+    const grouped = {};
+
+    cropPrices.forEach((item) => {
+      const marketName = item.market;
+
+      if (!grouped[marketName]) {
+        grouped[marketName] = [];
+      }
+
+      grouped[marketName].push(item);
+    });
+
+    return Object.entries(grouped)
+      .map(
+        ([marketName, entries]) => {
+          const latest = [...entries].sort(
+            (a, b) =>
+              new Date(b.arrival_date) -
+              new Date(a.arrival_date)
+          )[0];
+
+          return {
+            market: marketName,
+            modal_price: Number(
+              latest.modal_price
+            ),
+            min_price: Number(
+              latest.min_price
+            ),
+            max_price: Number(
+              latest.max_price
+            ),
+            arrival_date:
+              latest.arrival_date,
+            variety: latest.variety,
+          };
+        }
+      )
+      .filter((item) =>
+        Number.isFinite(
+          item.modal_price
+        )
+      )
+      .sort(
+        (a, b) =>
+          b.modal_price -
+          a.modal_price
+      );
+  }, [marketPrices, crop]);
+
+
+  const highestMarket =
+    marketComparison[0] || null;
+
+
+  // =====================================================
+  // PREDICTION
+  // =====================================================
 
   async function handlePrediction(event) {
     event.preventDefault();
 
-    if (!crop || !market || !variety || !forecastDate) {
-      setError("Please complete all fields.");
+    if (
+      !crop ||
+      !market ||
+      !variety ||
+      !forecastDate
+    ) {
+      setError(t.completeFields);
       return;
     }
 
@@ -217,20 +378,74 @@ function App() {
     setPrediction(null);
 
     try {
-      const response = await axios.post(`${API_URL}/predict`, {
-        crop,
-        market,
-        variety,
-        forecast_date: forecastDate,
-      });
+      const response =
+        await axios.post(
+          `${API_URL}/predict`,
+          {
+            // Backend receives English canonical name
+            crop: crop,
+            market: market,
+            variety: variety,
+            forecast_date:
+              forecastDate,
+          }
+        );
 
-      setPrediction(response.data);
+      const result = response.data;
+
+      setPrediction(result);
+
+      setPredictionHistory(
+        (previousHistory) => {
+          const historyItem = {
+            id: Date.now(),
+
+            crop: result.crop,
+
+            market: result.market,
+
+            variety_used:
+              result.variety_used,
+
+            forecast_date:
+              result.forecast_date,
+
+            predicted_price:
+              result.predicted_price,
+
+            confidence_score:
+              result.confidence_score,
+
+            confidence_level:
+              result.confidence_level,
+
+            trend: result.trend,
+
+            selected_model:
+              result.selected_model,
+          };
+
+          const updatedHistory = [
+            historyItem,
+            ...previousHistory,
+          ].slice(0, 10);
+
+          localStorage.setItem(
+            "krushimitra_prediction_history",
+            JSON.stringify(
+              updatedHistory
+            )
+          );
+
+          return updatedHistory;
+        }
+      );
     } catch (err) {
-      console.error("Prediction error:", err);
+      console.error(err);
 
       const message =
         err.response?.data?.detail ||
-        "Prediction failed. Please check your inputs.";
+        t.predictionFailed;
 
       setError(
         typeof message === "string"
@@ -242,76 +457,164 @@ function App() {
     }
   }
 
-  // --------------------------------------------------
-  // Chart data
-  // --------------------------------------------------
 
-  const chartData = prediction
-    ? [
-        {
-          name: "Lower",
-          price: prediction.estimated_price_range.lower,
-        },
-        {
-          name: "Predicted",
-          price: prediction.predicted_price,
-        },
-        {
-          name: "Upper",
-          price: prediction.estimated_price_range.upper,
-        },
-      ]
-    : [];
+  // =====================================================
+  // CLEAR HISTORY
+  // =====================================================
 
-  // --------------------------------------------------
-  // Format date
-  // --------------------------------------------------
+  function clearPredictionHistory() {
+    localStorage.removeItem(
+      "krushimitra_prediction_history"
+    );
 
-  function formatDate(dateString) {
-    if (!dateString) return "N/A";
-
-    const date = new Date(dateString);
-
-    if (Number.isNaN(date.getTime())) {
-      return dateString;
-    }
-
-    return date.toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
+    setPredictionHistory([]);
   }
 
-  // --------------------------------------------------
+
+  // =====================================================
+  // FORECAST CHART
+  // =====================================================
+
+  const forecastChartData =
+    prediction
+      ? [
+          {
+            name: t.lower,
+            price:
+              prediction
+                .estimated_price_range
+                .lower,
+          },
+
+          {
+            name: t.predicted,
+            price:
+              prediction.predicted_price,
+          },
+
+          {
+            name: t.upper,
+            price:
+              prediction
+                .estimated_price_range
+                .upper,
+          },
+        ]
+      : [];
+
+
+  // =====================================================
+  // FORMAT DATE
+  // =====================================================
+
+  function formatDate(value) {
+    if (!value) return "N/A";
+
+    const date = new Date(value);
+
+    if (
+      Number.isNaN(
+        date.getTime()
+      )
+    ) {
+      return value;
+    }
+
+    return date.toLocaleDateString(
+      language === "mr"
+        ? "mr-IN"
+        : language === "hi"
+        ? "hi-IN"
+        : "en-IN",
+      {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }
+    );
+  }
+
+
+  // =====================================================
   // UI
-  // --------------------------------------------------
+  // =====================================================
 
   return (
     <div className="app">
 
-      {/* Header */}
+      {/* =================================================
+          HEADER
+      ================================================= */}
+
       <header className="header">
 
         <div className="brand">
 
-          <div className="brand-icon">
-            <Sprout size={28} />
-          </div>
+          <img
+            src={logo}
+            alt="KrushiMitra AI"
+            className="brand-logo"
+          />
 
-          <div>
-            <h1>KrushiMitra AI</h1>
+          <div className="brand-text">
+
+            <h1>
+              KrushiMitra AI
+            </h1>
 
             <p>
-              AI-Powered Agricultural Price Forecasting
+              {t.footer}
             </p>
+
           </div>
 
         </div>
 
-        <div className="status">
-          <span className="status-dot"></span>
-          AI System Online
+
+        <div className="header-right">
+
+          {/* LANGUAGE */}
+
+          <div className="language-selector">
+
+            <Globe size={16} />
+
+            <select
+              value={language}
+              onChange={(e) =>
+                setLanguage(
+                  e.target.value
+                )
+              }
+            >
+
+              <option value="en">
+                English
+              </option>
+
+              <option value="mr">
+                मराठी
+              </option>
+
+              <option value="hi">
+                हिंदी
+              </option>
+
+            </select>
+
+          </div>
+
+
+          {/* STATUS */}
+
+          <div className="status">
+
+            <span className="status-dot"></span>
+
+            {t.systemOnline}
+
+          </div>
+
         </div>
 
       </header>
@@ -319,30 +622,272 @@ function App() {
 
       <main className="container">
 
-        {/* Hero */}
+        {/* =================================================
+            HERO
+        ================================================= */}
+
         <section className="hero">
 
           <span className="eyebrow">
-            SMART FARMING • MARKET INTELLIGENCE
+            {t.smartFarming}
           </span>
 
           <h2>
-            Make smarter crop-selling decisions
+
+            {t.heroTitle}
+
             <span>
-              {" "}with AI-powered price forecasts.
+              {" "}
+              {t.heroHighlight}
             </span>
+
           </h2>
 
           <p>
-            Select a crop and market to view the latest
-            available market price and generate an
-            AI-powered price forecast.
+            {t.heroDescription}
           </p>
 
         </section>
 
 
-        {/* Prediction Form */}
+        {/* =================================================
+            MARKET COMPARISON
+        ================================================= */}
+
+        {crop &&
+          marketComparison.length >
+            0 && (
+
+            <section className="comparison-section">
+
+              <div className="comparison-header">
+
+                <div className="section-heading">
+
+                  <div className="heading-icon">
+                    <BarChart3 size={22} />
+                  </div>
+
+                  <div>
+
+                    <h3>
+                      {t.marketComparison}
+                    </h3>
+
+                    <p>
+                      {t.latestAvailablePrices}{" "}
+                      <strong>
+                        {getCropDisplayName(crop)}
+                      </strong>
+                    </p>
+
+                  </div>
+
+                </div>
+
+
+                <div className="comparison-label">
+                  {t.latestAvailable}
+                </div>
+
+              </div>
+
+
+              {/* HIGHEST MARKET */}
+
+              {highestMarket && (
+
+                <div className="highest-market">
+
+                  <div className="winner-icon">
+                    <Trophy size={20} />
+                  </div>
+
+                  <div className="winner-text">
+
+                    <span>
+                      {t.highestPrice}
+                    </span>
+
+                    <strong>
+                      {highestMarket.market}
+                    </strong>
+
+                  </div>
+
+                  <div className="winner-price">
+
+                    ₹
+                    {highestMarket.modal_price.toLocaleString(
+                      "en-IN"
+                    )}
+
+                    <small>
+                      / {t.perQuintal}
+                    </small>
+
+                  </div>
+
+                </div>
+
+              )}
+
+
+              {/* CHART */}
+
+              <div className="comparison-chart">
+
+                <ResponsiveContainer
+                  width="100%"
+                  height={340}
+                >
+
+                  <BarChart
+                    data={
+                      marketComparison
+                    }
+                  >
+
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                    />
+
+                    <XAxis
+                      dataKey="market"
+                      tick={{
+                        fontSize: 12,
+                      }}
+                    />
+
+                    <YAxis
+                      tick={{
+                        fontSize: 11,
+                      }}
+                    />
+
+                    <Tooltip
+                      formatter={(value) => [
+                        `₹${Number(
+                          value
+                        ).toLocaleString(
+                          "en-IN"
+                        )}`,
+                        t.modalPrice,
+                      ]}
+                    />
+
+                    <Bar
+                      dataKey="modal_price"
+                      fill="#1d6b3b"
+                      radius={[
+                        7,
+                        7,
+                        0,
+                        0,
+                      ]}
+                    />
+
+                  </BarChart>
+
+                </ResponsiveContainer>
+
+              </div>
+
+
+              {/* MARKET CARDS */}
+
+              <div className="comparison-grid">
+
+                {marketComparison.map(
+                  (item, index) => (
+
+                    <div
+                      className={`comparison-card ${
+                        index === 0
+                          ? "comparison-card-best"
+                          : ""
+                      }`}
+                      key={
+                        item.market
+                      }
+                    >
+
+                      <div className="comparison-card-top">
+
+                        <div className="market-icon">
+                          <MapPin size={17} />
+                        </div>
+
+                        <span>
+
+                          {index === 0
+                            ? t.bestPrice
+                            : `#${index + 1}`}
+
+                        </span>
+
+                      </div>
+
+                      <h4>
+                        {item.market}
+                      </h4>
+
+                      <strong>
+
+                        ₹
+                        {item.modal_price.toLocaleString(
+                          "en-IN"
+                        )}
+
+                      </strong>
+
+                      <p>
+                        {t.modalPricePerQuintal}
+                      </p>
+
+                      <div className="comparison-range">
+
+                        <span>
+                          Min ₹
+                          {item.min_price.toLocaleString(
+                            "en-IN"
+                          )}
+                        </span>
+
+                        <span>
+                          Max ₹
+                          {item.max_price.toLocaleString(
+                            "en-IN"
+                          )}
+                        </span>
+
+                      </div>
+
+                      <small>
+
+                        {t.updated}{" "}
+                        {formatDate(
+                          item.arrival_date
+                        )}
+
+                      </small>
+
+                    </div>
+
+                  )
+                )}
+
+              </div>
+
+            </section>
+
+          )}
+
+
+        {/* =================================================
+            PREDICTION FORM
+        ================================================= */}
+
         <section className="prediction-card">
 
           <div className="section-heading">
@@ -352,138 +897,170 @@ function App() {
             </div>
 
             <div>
-              <h3>Generate Price Forecast</h3>
+
+              <h3>
+                {t.generateForecast}
+              </h3>
 
               <p>
-                Enter the crop and market information below.
+                {t.generateForecastDescription}
               </p>
+
             </div>
 
           </div>
 
 
           <form
-            onSubmit={handlePrediction}
+            onSubmit={
+              handlePrediction
+            }
             className="form-grid"
           >
 
-            {/* Crop */}
+            {/* CROP */}
+
             <div className="field">
 
               <label>
                 <Sprout size={16} />
-                Crop
+                {t.crop}
               </label>
 
               <select
                 value={crop}
                 onChange={(e) =>
-                  setCrop(e.target.value)
+                  setCrop(
+                    e.target.value
+                  )
                 }
                 required
               >
 
                 <option value="">
-                  Select crop
+                  {t.selectCrop}
                 </option>
 
-                {crops.map((item) => (
-                  <option
-                    key={item}
-                    value={item}
-                  >
-                    {item}
-                  </option>
-                ))}
+                {crops.map(
+                  (item) => (
+
+                    <option
+                      key={item}
+                      value={item}
+                    >
+                      {getCropDisplayName(
+                        item
+                      )}
+                    </option>
+
+                  )
+                )}
 
               </select>
 
             </div>
 
 
-            {/* Market */}
+            {/* MARKET */}
+
             <div className="field">
 
               <label>
                 <MapPin size={16} />
-                Market
+                {t.market}
               </label>
 
               <select
                 value={market}
                 onChange={(e) =>
-                  setMarket(e.target.value)
+                  setMarket(
+                    e.target.value
+                  )
                 }
-                required
                 disabled={!crop}
+                required
               >
 
                 <option value="">
-                  Select market
+                  {t.selectMarket}
                 </option>
 
-                {validMarkets.map((item) => (
-                  <option
-                    key={item}
-                    value={item}
-                  >
-                    {item}
-                  </option>
-                ))}
+                {validMarkets.map(
+                  (item) => (
+
+                    <option
+                      key={item}
+                      value={item}
+                    >
+                      {item}
+                    </option>
+
+                  )
+                )}
 
               </select>
 
             </div>
 
 
-            {/* Variety */}
+            {/* VARIETY */}
+
             <div className="field">
 
               <label>
                 <Sprout size={16} />
-                Variety
+                {t.variety}
               </label>
 
               <select
                 value={variety}
                 onChange={(e) =>
-                  setVariety(e.target.value)
+                  setVariety(
+                    e.target.value
+                  )
                 }
-                required
                 disabled={!market}
+                required
               >
 
                 <option value="">
-                  Select variety
+                  {t.selectVariety}
                 </option>
 
-                {validVarieties.map((item) => (
-                  <option
-                    key={item}
-                    value={item}
-                  >
-                    {item}
-                  </option>
-                ))}
+                {validVarieties.map(
+                  (item) => (
+
+                    <option
+                      key={item}
+                      value={item}
+                    >
+                      {item}
+                    </option>
+
+                  )
+                )}
 
               </select>
 
             </div>
 
 
-            {/* Forecast Date */}
+            {/* DATE */}
+
             <div className="field">
 
               <label>
                 <CalendarDays size={16} />
-                Forecast Date
+                {t.forecastDate}
               </label>
 
               <input
                 type="date"
                 value={forecastDate}
                 onChange={(e) =>
-                  setForecastDate(e.target.value)
+                  setForecastDate(
+                    e.target.value
+                  )
                 }
                 required
               />
@@ -491,7 +1068,8 @@ function App() {
             </div>
 
 
-            {/* Predict */}
+            {/* BUTTON */}
+
             <button
               className="predict-button"
               type="submit"
@@ -506,8 +1084,8 @@ function App() {
               <TrendingUp size={20} />
 
               {loading
-                ? "Generating..."
-                : "Predict Price"}
+                ? t.generating
+                : t.predictPrice}
 
             </button>
 
@@ -523,123 +1101,132 @@ function App() {
         </section>
 
 
-        {/* ------------------------------------------------
-            Latest Market Price
-        ------------------------------------------------ */}
-        {crop && market && variety && (
+        {/* =================================================
+            LATEST MARKET PRICE
+        ================================================= */}
 
-          <section className="market-price-section">
+        {crop &&
+          market &&
+          variety &&
+          latestMarketPrice && (
 
-            <div className="section-heading">
+            <section className="market-price-section">
 
-              <div className="heading-icon">
-                <Activity size={22} />
+              <div className="section-heading">
+
+                <div className="heading-icon">
+                  <Activity size={22} />
+                </div>
+
+                <div>
+
+                  <h3>
+                    {t.latestMarketPrice}
+                  </h3>
+
+                  <p>
+                    {getCropDisplayName(crop)} •{" "}
+                    {market} •{" "}
+                    {variety}
+                  </p>
+
+                </div>
+
               </div>
 
-              <div>
-                <h3>Latest Available Market Price</h3>
-
-                <p>
-                  Most recent market data available in the system.
-                </p>
-              </div>
-
-            </div>
-
-
-            {latestMarketPrice ? (
 
               <div className="metrics">
 
-                {/* Modal Price */}
                 <div className="metric main-metric">
 
                   <span>
-                    Current Modal Price
+                    {t.currentModalPrice}
                   </span>
 
                   <strong>
+
                     ₹
                     {Number(
                       latestMarketPrice.modal_price
-                    ).toLocaleString("en-IN")}
+                    ).toLocaleString(
+                      "en-IN"
+                    )}
+
                   </strong>
 
                   <small>
-                    per quintal
+                    {t.perQuintal}
                   </small>
 
                 </div>
 
 
-                {/* Minimum */}
                 <div className="metric">
 
                   <span>
-                    Minimum Price
+                    {t.minimumPrice}
                   </span>
 
                   <strong>
+
                     ₹
                     {Number(
                       latestMarketPrice.min_price
-                    ).toLocaleString("en-IN")}
+                    ).toLocaleString(
+                      "en-IN"
+                    )}
+
                   </strong>
 
                 </div>
 
 
-                {/* Maximum */}
                 <div className="metric">
 
                   <span>
-                    Maximum Price
+                    {t.maximumPrice}
                   </span>
 
                   <strong>
+
                     ₹
                     {Number(
                       latestMarketPrice.max_price
-                    ).toLocaleString("en-IN")}
+                    ).toLocaleString(
+                      "en-IN"
+                    )}
+
                   </strong>
 
                 </div>
 
 
-                {/* Arrival Date */}
                 <div className="metric">
 
                   <span>
-                    Latest Arrival Date
+                    {t.arrivalDate}
                   </span>
 
                   <strong>
+
                     {formatDate(
                       latestMarketPrice.arrival_date
                     )}
+
                   </strong>
 
                 </div>
 
               </div>
 
-            ) : (
+            </section>
 
-              <div className="error">
-                No market price data found for{" "}
-                {crop} — {market} — {variety}.
-              </div>
-
-            )}
-
-          </section>
-
-        )}
+          )}
 
 
-        {/* ------------------------------------------------
-            AI Forecast Results
-        ------------------------------------------------ */}
+        {/* =================================================
+            PREDICTION RESULT
+        ================================================= */}
 
         {prediction && (
 
@@ -650,17 +1237,29 @@ function App() {
               <div>
 
                 <span className="eyebrow">
-                  AI FORECAST RESULT
+                  {t.aiForecast}
                 </span>
 
                 <h3>
-                  {prediction.crop} —{" "}
+
+                  {getCropDisplayName(
+                    prediction.crop
+                  )}
+
+                  {" — "}
+
                   {prediction.market}
+
                 </h3>
 
                 <p>
-                  {prediction.variety_used} •{" "}
-                  {prediction.forecast_date}
+
+                  {prediction.variety_used}
+                  {" • "}
+                  {formatDate(
+                    prediction.forecast_date
+                  )}
+
                 </p>
 
               </div>
@@ -669,7 +1268,7 @@ function App() {
               <div className="confidence">
 
                 <span>
-                  Confidence
+                  {t.confidence}
                 </span>
 
                 <strong>
@@ -685,24 +1284,29 @@ function App() {
             </div>
 
 
-            {/* Forecast Metrics */}
+            {/* RESULT METRICS */}
+
             <div className="metrics">
 
               <div className="metric main-metric">
 
                 <span>
-                  Predicted Price
+                  {t.predictedPrice}
                 </span>
 
                 <strong>
+
                   ₹
                   {Number(
                     prediction.predicted_price
-                  ).toLocaleString("en-IN")}
+                  ).toLocaleString(
+                    "en-IN"
+                  )}
+
                 </strong>
 
                 <small>
-                  per quintal
+                  {t.perQuintal}
                 </small>
 
               </div>
@@ -711,14 +1315,20 @@ function App() {
               <div className="metric">
 
                 <span>
-                  Lower Estimate
+                  {t.lowerEstimate}
                 </span>
 
                 <strong>
+
                   ₹
                   {Number(
-                    prediction.estimated_price_range.lower
-                  ).toLocaleString("en-IN")}
+                    prediction
+                      .estimated_price_range
+                      .lower
+                  ).toLocaleString(
+                    "en-IN"
+                  )}
+
                 </strong>
 
               </div>
@@ -727,14 +1337,20 @@ function App() {
               <div className="metric">
 
                 <span>
-                  Upper Estimate
+                  {t.upperEstimate}
                 </span>
 
                 <strong>
+
                   ₹
                   {Number(
-                    prediction.estimated_price_range.upper
-                  ).toLocaleString("en-IN")}
+                    prediction
+                      .estimated_price_range
+                      .upper
+                  ).toLocaleString(
+                    "en-IN"
+                  )}
+
                 </strong>
 
               </div>
@@ -743,7 +1359,7 @@ function App() {
               <div className="metric">
 
                 <span>
-                  Market Trend
+                  {t.marketTrend}
                 </span>
 
                 <strong>
@@ -755,7 +1371,8 @@ function App() {
             </div>
 
 
-            {/* Chart */}
+            {/* FORECAST CHART */}
+
             <div className="chart-card">
 
               <div className="chart-header">
@@ -763,11 +1380,11 @@ function App() {
                 <div>
 
                   <h4>
-                    Expected Price Range
+                    {t.expectedRange}
                   </h4>
 
                   <p>
-                    AI-generated forecast range
+                    {t.forecastRange}
                   </p>
 
                 </div>
@@ -784,8 +1401,10 @@ function App() {
                 height={300}
               >
 
-                <LineChart
-                  data={chartData}
+                <BarChart
+                  data={
+                    forecastChartData
+                  }
                 >
 
                   <CartesianGrid
@@ -800,33 +1419,56 @@ function App() {
 
                   <Tooltip
                     formatter={(value) => [
-                      `₹${Number(value).toLocaleString(
+                      `₹${Number(
+                        value
+                      ).toLocaleString(
                         "en-IN"
                       )}`,
-                      "Price",
+                      t.price,
                     ]}
                   />
 
-                  <Line
-                    type="monotone"
+                  <Bar
                     dataKey="price"
-                    strokeWidth={3}
-                    dot={{ r: 6 }}
+                    fill="#1d6b3b"
+                    radius={[
+                      7,
+                      7,
+                      0,
+                      0,
+                    ]}
                   />
 
-                </LineChart>
+                </BarChart>
 
               </ResponsiveContainer>
 
             </div>
 
 
-            {/* Explanation */}
+            {/* AI EXPLANATION */}
+
             <div className="explanation">
 
-              <h4>
-                AI Explanation
-              </h4>
+              <div className="explanation-title">
+
+                <div className="ai-icon">
+                  <Brain size={19} />
+                </div>
+
+                <div>
+
+                  <h4>
+                    {t.aiExplanation}
+                  </h4>
+
+                  <span>
+                    {t.modelInsight}
+                  </span>
+
+                </div>
+
+              </div>
 
               <p>
                 {prediction.explanation}
@@ -835,7 +1477,6 @@ function App() {
             </div>
 
 
-            {/* Warning */}
             {prediction.warning_if_low_confidence && (
 
               <div className="warning">
@@ -848,14 +1489,181 @@ function App() {
 
         )}
 
+
+        {/* =================================================
+            HISTORY
+        ================================================= */}
+
+        {predictionHistory.length >
+          0 && (
+
+            <section className="history-section">
+
+              <div className="history-header">
+
+                <div className="section-heading">
+
+                  <div className="heading-icon">
+                    <Activity size={22} />
+                  </div>
+
+                  <div>
+
+                    <h3>
+                      {t.predictionHistory}
+                    </h3>
+
+                    <p>
+                      {t.recentForecasts}
+                    </p>
+
+                  </div>
+
+                </div>
+
+
+                <button
+                  className="clear-history-button"
+                  onClick={
+                    clearPredictionHistory
+                  }
+                  type="button"
+                >
+                  {t.clearHistory}
+                </button>
+
+              </div>
+
+
+              <div className="history-list">
+
+                {predictionHistory.map(
+                  (item) => (
+
+                    <div
+                      className="history-item"
+                      key={item.id}
+                    >
+
+                      <div className="history-main">
+
+                        <div className="history-crop-icon">
+                          <Sprout size={19} />
+                        </div>
+
+                        <div>
+
+                          <strong>
+                            {getCropDisplayName(
+                              item.crop
+                            )}
+                          </strong>
+
+                          <span>
+                            {item.market} •{" "}
+                            {item.variety_used}
+                          </span>
+
+                        </div>
+
+                      </div>
+
+
+                      <div className="history-price">
+
+                        <span>
+                          {t.predictedPrice}
+                        </span>
+
+                        <strong>
+
+                          ₹
+                          {Number(
+                            item.predicted_price
+                          ).toLocaleString(
+                            "en-IN"
+                          )}
+
+                        </strong>
+
+                      </div>
+
+
+                      <div className="history-confidence">
+
+                        <span>
+                          {t.confidence}
+                        </span>
+
+                        <strong>
+                          {item.confidence_score}%
+                        </strong>
+
+                      </div>
+
+
+                      <div className="history-trend">
+                        {item.trend}
+                      </div>
+
+                    </div>
+
+                  )
+                )}
+
+              </div>
+
+            </section>
+
+          )}
+
+
+        {/* =================================================
+            DISCLAIMER
+        ================================================= */}
+
+        <section className="development-disclaimer">
+
+          <div className="disclaimer-icon">
+            ⚠
+          </div>
+
+          <div>
+
+            <strong>
+              {t.developmentPrototype}
+            </strong>
+
+            <p>
+              {t.disclaimer}
+            </p>
+
+          </div>
+
+        </section>
+
       </main>
 
 
+      {/* FOOTER */}
+
       <footer>
 
+        <div className="footer-brand">
+
+          <img
+            src={logo}
+            alt="KrushiMitra AI"
+          />
+
+          <span>
+            KrushiMitra AI
+          </span>
+
+        </div>
+
         <p>
-          KrushiMitra AI • AI-based agricultural
-          market decision support
+          {t.footer}
         </p>
 
       </footer>
